@@ -1,15 +1,21 @@
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.devtools.NetworkInterceptor;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.remote.http.Filter;
+import org.openqa.selenium.remote.http.HttpResponse;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 
 public class SeleniumTest {
@@ -17,9 +23,52 @@ public class SeleniumTest {
     final String URL = "https://old.vyatsu.ru";
     final String URL2 = "https://otzovik.com";
     final String URL3 = "https://m.cdsvyatka.com";
+    final List<String> ALLOWED_DOMAINS = Arrays.asList(
+            "vyatsu.ru",
+            "otzovik.com",
+            "cdsvyatka.com"
+    );
+    public void takeScreenshot(String screenshotName) {
+        try {
+            TakesScreenshot ts = (TakesScreenshot) driver;
+            File source = ts.getScreenshotAs(OutputType.FILE);
+            File dir = new File("screenshots");
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+            File destination = new File(dir, screenshotName + ".png");
+            Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("Скриншот сохранен");
+        } catch (Exception e) {
+            System.out.println("Не удалось сделать скриншот: " + e.getMessage());
+        }
+    }
+    @Rule
+    public TestWatcher watcher = new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            takeScreenshot("FAILED_" + description.getMethodName());
+        }
+    };
     @Before
     public void setup(){
         driver = new ChromeDriver();
+        NetworkInterceptor interceptor = new NetworkInterceptor(
+                driver,
+                (Filter) next -> req -> {
+                    String url = req.getUri();
+
+                    if (url != null && (
+                            url.contains("mc.yandex.ru") ||
+                                    url.contains("google-analytics.com") ||
+                                    url.contains("googletagmanager.com") ||
+                                    url.contains("vk.com/rtrg")
+                    )) {
+                        return new HttpResponse();
+                    }
+                    return next.execute(req);
+                }
+        );
     }
     @Test
     public void task1script1(){
@@ -33,6 +82,7 @@ public class SeleniumTest {
                 wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//ul/li//a[contains(text(),'Образовательные стандарты')]") ));
         targetMenuItem.click();
         wait.until(ExpectedConditions.urlToBe("https://new.vyatsu.ru/sveden/eduStandarts/"));
+        takeScreenshot("tas1script1");
     }
     @Test
     public void task1script2(){
@@ -48,6 +98,7 @@ public class SeleniumTest {
                     By.xpath("//div/h4//a")));
             Assert.assertFalse("Результаты поиска пусты", searchResults.isEmpty());
             System.out.println("Найдено результатов: " + searchResults.size());
+            takeScreenshot("task1script2");
         } catch (org.openqa.selenium.TimeoutException e) {
             Assert.fail("Нет результатов поиска");
         }
@@ -69,6 +120,7 @@ public class SeleniumTest {
         System.out.println("Результат для некорректного email: " + alertText);
         alert.accept();
         Assert.assertTrue("Нет успеха", alertText.toLowerCase().contains("неправильно"));
+        takeScreenshot("task1script3wrong");
 
         emailInput.clear();
         emailInput.sendKeys("test@vyatsu.ru");
@@ -78,6 +130,7 @@ public class SeleniumTest {
         System.out.println("Результат для корретного email: " + alert2Text);
         alert.accept();
         Assert.assertTrue("Нет успеха", alert2Text.toLowerCase().contains("успешно") || alert2Text.toLowerCase().contains("находится в базе данных"));
+        takeScreenshot("task1script3correct");
     }
     @Test
     public void task2script1(){
@@ -94,6 +147,7 @@ public class SeleniumTest {
         List<WebElement> reviews = driver.findElements(
                 By.xpath("//div/a/span[contains(@class, 'counter')]"));
         Assert.assertFalse("Список отзывов пуст", reviews.isEmpty());
+        takeScreenshot("task2script1");
     }
     @Test
     public void task2script2(){
@@ -126,6 +180,7 @@ public class SeleniumTest {
         WebElement okButton = wait.until(ExpectedConditions.elementToBeClickable(
                 By.xpath("//div[contains(@class, 'dia-footer')]//button[contains(text(), 'OK')]")));
         okButton.click();
+        takeScreenshot("task2script2");
     }
     @Test
     public void task3script1(){
@@ -152,6 +207,7 @@ public class SeleniumTest {
         Assert.assertTrue("В информации нет слова Автобус", busInfo.contains("Автобус"));
         Assert.assertTrue("В информации нет слова Скорость", busInfo.contains("Скорость"));
         Assert.assertTrue("В информации нет слова Модель", busInfo.contains("Модель"));
+        takeScreenshot("task3script1");
     }
     @Test
     public void task3script2(){
@@ -181,6 +237,7 @@ public class SeleniumTest {
         String busNumber = busNumberCell.getText().replace('\u00A0', ' ').trim();
         System.out.println("Номер автобуса: " + busNumber);
         Assert.assertFalse("Номер автобуса не отображается", busNumber.isEmpty());
+        takeScreenshot("task3script2");
     }
     @After
     public void quit(){
