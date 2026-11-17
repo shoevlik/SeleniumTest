@@ -23,11 +23,6 @@ public class SeleniumTest {
     final String URL = "https://old.vyatsu.ru";
     final String URL2 = "https://otzovik.com";
     final String URL3 = "https://m.cdsvyatka.com";
-    final List<String> ALLOWED_DOMAINS = Arrays.asList(
-            "vyatsu.ru",
-            "otzovik.com",
-            "cdsvyatka.com"
-    );
     public void takeScreenshot(String screenshotName) {
         try {
             TakesScreenshot ts = (TakesScreenshot) driver;
