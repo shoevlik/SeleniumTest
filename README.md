@@ -44,4 +44,5 @@
 
 Итоговый результат:
 
-<img width="605" height="306" alt="image-10" src="https://github.com/user-attachments/assets/50dbba13-9384-4731-9f81-15277232dfd2" />
+<img width="600" height="296" alt="image" src="https://github.com/user-attachments/assets/75317a02-b9b1-4a9a-b065-6098efd0f122" />
+
